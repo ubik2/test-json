@@ -1,0 +1,310 @@
+{
+  "identifier": "activity_set_step_goal",
+  "steps": [
+    {
+      "$type": "InstructionStep",
+      "identifier": "instruction_intro",
+      "title": "Set Your Goal",
+      "detailText": "A good starting point!",
+      "text": "By setting a step goal, Reboot can help you stay on target"
+    },
+    {
+      "$type": "QuestionStep",
+      "identifier": "question_override_goal",
+      "title": "Set Your Goal",
+      "question": "Based on your step activity over the last 7 days, we have set an initial goal of {{ stepcount_weekly_average }}.\n#### Would you like to change this goal?",
+      "optional": false,
+      "answerFormat": {
+        "$type": "BooleanAnswerFormat",
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    {
+      "$type": "QuestionStep",
+      "identifier": "question_initial_goal",
+      "title": "Set Your Goal",
+      "detailText": "A good starting point!",
+      "question": "Let’s set you up with a daily walking goal! You can start slowly and build over time, or jump in with 10,000 steps right away. \n\nAnd here’s a bonus to keep in mind: every minute of moderate exercise you do can be added later. One minute = 100 steps! \n\n#### Pick a starting goal",
+      "optional": false,
+      "answerFormat": {
+        "$type": "TextChoiceAnswerFormat",
+        "style": "SingleChoice",
+        "textChoices": [
+          {
+            "value": 4000,
+            "text": "4,000 steps per day"
+          },
+          {
+            "value": 7000,
+            "text": "7,000 steps per day"
+          },
+          {
+            "value": 10000,
+            "text": "10,000 steps per day"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "QuestionStep",
+      "identifier": "question_goal_increment",
+      "title": "Set Your Goal",
+      "detailText": "Step it up!",
+      "question": "Excellent!  We’ll increase your goal a little each week to help you reach your ultimate target of 10,000 steps. \n\n#### How many steps would you like to add each week to get you to your goal?\n",
+      "optional": false,
+      "answerFormat": {
+        "$type": "TextChoiceAnswerFormat",
+        "style": "SingleChoice",
+        "textChoices": [
+          {
+            "value": 500,
+            "text": "500 steps"
+          },
+          {
+            "value": 1000,
+            "text": "1,000 steps"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "InstructionStep",
+      "identifier": "instruction_goal_summary",
+      "title": "Set Your Goal",
+      "detailText": "You’re on your way!",
+      "text": "Congratulations! Your goal of {{ stepcount_goal }} steps is totally doable!\n\nWe’ll increase your goal by {{ stepcount_goal_increment }} steps each week until you reach 10,000 steps.\n\nSoon, 10,000 steps a day is going to be a natural part of your daily life!\n\n"
+    },
+    {
+      "$type": "InstructionStep",
+      "identifier": "instruction_goal_max",
+      "title": "Good Job!",
+      "text": "Congratulations! Your goal of {{ stepcount_goal }} steps is totally doable!\n\nSoon, 10,000 steps a day is going to be a natural part of your daily life!  \n\n"
+    }
+  ],
+  "userInfoRules": {
+    "stepcount_weekly_average": {
+      "name": "Steps",
+      "destination": "DailyAggregateStepCount",
+      "strategy": "get_weekly",
+      "jsonLogic": {
+        "-": [
+          {
+            "/": [
+              {
+                "or": [
+                  {
+                    "var": "totals.value"
+                  },
+                  0
+                ]
+              },
+              7
+            ]
+          },
+          {
+            "%": [
+              {
+                "/": [
+                  {
+                    "or": [
+                      {
+                        "var": "totals.value"
+                      },
+                      0
+                    ]
+                  },
+                  7
+                ]
+              },
+              1
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "storageRules": [
+    {
+      "name": "Steps",
+      "destination": "DailyAggregateStepGoal",
+      "strategy": "replace_daily_latest",
+      "jsonLogic": {
+        "reduce": [
+          {
+            "filter": [
+              { "var": "results" },
+              {
+                "==": [
+                  { "var": "identifier" },
+                  "question_initial_goal"
+                ]
+              }
+            ]
+          },
+          { "var":  "current.results.0.choiceAnswers.0" },
+          {
+            "min": [
+              {
+                "max": [
+                  { "var": "userInfo.stepcount_weekly_average" },
+                  { "var": "userInfo.stepcount_weeklyaverage" }
+                ]
+              },
+              10000
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Steps",
+      "destination": "StepGoalIncrement",
+      "strategy": "replace_latest",
+      "jsonLogic": {
+        "reduce": [
+          {
+            "filter": [
+              { "var": "results" },
+              {
+                "==": [
+                  { "var": "identifier" },
+                  "question_goal_increment"
+                ]
+              }
+            ]
+          },
+          { "var": "current.results.0.choiceAnswers.0" },          
+          0
+        ]
+      }
+    }
+  ],
+  "stepNavigationRules": {
+    "instruction_intro": {
+      "resultPredicates": [
+        {
+          ">=": [
+            {
+              "max": [
+                { "var": "userInfo.stepcount_weekly_average" },
+                { "var": "userInfo.stepcount_weeklyaverage" }
+              ]
+            },
+            10000
+          ]
+        },
+        {
+          ">": [
+            {
+              "max": [
+                { "var": "userInfo.stepcount_weekly_average" },
+                { "var": "userInfo.stepcount_weeklyaverage" }
+              ]
+            },
+            0
+          ]
+        }
+      ],
+      "destinationStepIdentifiers": [
+        "instruction_goal_max",
+        "question_override_goal"
+      ],
+      "defaultStepIdentifier": "question_initial_goal"
+    },
+    "question_override_goal": {
+      "resultPredicates": [
+        {
+          "reduce": [
+            {
+              "filter": [
+                { "var": "results" },
+                {
+                  "==": [
+                    { "var": "identifier" },
+                    "question_override_goal"
+                  ]
+                }
+              ]
+            },
+            { 
+              "!!": { "var": "current.results.0.booleanAnswer" }
+            },
+            false
+          ]
+        }
+      ],
+      "destinationStepIdentifiers": [
+        "question_initial_goal"
+      ],
+      "defaultStepIdentifier": "question_goal_increment"
+    },
+    "question_initial_goal": {
+      "resultPredicates": [
+        {"==":[10000, {"reduce":[{"filter":[{"var":"results"},{"==":[{"var":"identifier"},"question_initial_goal"]}]},{"reduce":[{"filter":[{"var":"current.results"},{"==":[{"var":"identifier"},"question_initial_goal"]}]},{"var":"current.choiceAnswers.0"},null]},null]}]}
+      ],
+      "destinationStepIdentifiers": [
+        "instruction_goal_summary"
+      ],
+      "defaultStepIdentifier": "question_goal_increment"
+    },
+    "instruction_goal_summary": {
+      "defaultStepIdentifier": "end"
+    },
+    "instruction_goal_max": {
+      "defaultStepIdentifier": "end"
+    }
+  },
+  "templateVariableRules": {
+    "stepcount_weekly_average": {
+      "max": [ 
+        { "var": "userInfo.stepcount_weekly_average" },
+        { "var": "userInfo.stepcount_weeklyaverage" }
+      ]
+    },
+    "stepcount_goal": {
+      "reduce": [
+        {
+          "filter": [
+            { "var": "results" },
+            {
+              "==": [
+                { "var": "identifier" },
+                "question_initial_goal"
+              ]
+            }
+          ]
+        },
+        { "var": "current.results.0.choiceAnswers.0" },
+        {
+          "min": [
+            {
+              "max": [
+                { "var": "userInfo.stepcount_weekly_average" },
+                { "var": "userInfo.stepcount_weeklyaverage" }
+              ]
+            },
+            10000
+          ]
+        }
+      ]
+    },
+    "stepcount_goal_increment": {
+      "reduce": [
+        {
+          "filter": [
+            { "var": "results" },
+            {
+              "==": [
+                { "var": "identifier" },
+                "question_goal_increment"
+              ]
+            }
+          ]
+        },
+        { "var": "current.results.0.choiceAnswers.0" },
+        0
+      ]
+    }
+  }
+}
