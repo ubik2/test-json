@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate JSON with Glob and Formats
-        uses: ubik2/validate-json-action@0.1.4
+        uses: ubik2/validate-json-action@0.1.5
         with:
           schema: /tasks/schema/schema.json
           json: /tasks/activity_set_step_goal.json
